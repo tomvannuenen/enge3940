@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agree or rewrite · ENGE3940</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<p class="course"><a href="../index.html">ENGE3940 AI and Language</a> · Meeting 8 · in pairs · not graded</p>
+<h1>Agree or rewrite</h1>
+
+<div id="classbar"></div>
+
+<p>Two readers often judge the same response differently. In this game your pair’s score is how often the two of you agree. The only way to raise it is to write a clearer criterion together.</p>
+
+<div id="pairbox" class="box"></div>
+
+<section id="round1" class="hidden">
+  <h2>Round 1</h2>
+  <p><strong>Do not talk yet.</strong> Someone asked a chatbot:</p>
+  <div class="box"><span class="label">Request</span><p id="req1"></p></div>
+  <p>Judge each response with this criterion: <strong>“The message is good.”</strong></p>
+  <div id="list1"></div>
+  <p><button type="button" id="send1">Send my six answers</button></p>
+  <div class="fb hidden" id="fb1"></div>
+</section>
+
+<section id="talk" class="hidden">
+  <h2>Now talk</h2>
+  <p class="big" id="score1"></p>
+  <p>Look at the responses marked “you disagreed”. Why did you judge them differently? What did each of you mean by “good”?</p>
+  <p>Write a clearer criterion together. Say who the message is for and what it should do. Either of you can type; you both see it.</p>
+  <textarea id="crit" maxlength="200" placeholder="For example: It sounds like something a friend would really send by text."></textarea>
+  <p><button type="button" id="savecrit">Use this criterion</button></p>
+  <div class="fb hidden" id="fbc"></div>
+</section>
+
+<section id="round2" class="hidden">
+  <h2>Round 2</h2>
+  <p><strong>No talking again.</strong> Six new responses to the same request. Judge each with your own criterion:</p>
+  <div class="box"><span class="label">Your criterion</span><p id="crit2"></p></div>
+  <div id="list2"></div>
+  <p><button type="button" id="send2">Send my six answers</button></p>
+  <div class="fb hidden" id="fb2"></div>
+</section>
+
+<section id="end" class="hidden">
+  <h2>Result</h2>
+  <p class="big" id="score2"></p>
+  <ul>
+    <li>“Good” means different things to different readers. A criterion has to say what to look for.</li>
+    <li>If you still disagreed in round 2, look at where. A disagreement that survives a clear criterion is worth reporting.</li>
+    <li>For your poster: choose your criteria before you collect responses, and have two people judge.</li>
+  </ul>
+  <p class="takeaway">What did your criterion say that “good” did not?</p>
+</section>
+
+<footer class="small"><p id="src"></p><p>Your answers go to the class screen as a score for the pair, without names. Everything is deleted within 12 hours.</p></footer>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/class.js"></script>
+<script src="../assets/pair.js"></script>
+<script src="meeting-08.data.js"></script>
+<script>
+(function () {
+  var D = window.M08, mine = { 1: {}, 2: {} }, phase = 0, score = {}, sentClass = false;
+  function el(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function show(id) { el(id).classList.remove("hidden"); }
+  function fb(id, ok, text) { el(id).className = "fb " + (ok ? "ok" : "no"); el(id).textContent = text; }
+  el("req1").textContent = D.request; el("src").textContent = "Responses: " + D.source;
+
+  function drawList(round, marks) {
+    el("list" + round).innerHTML = D["round" + round].map(function (t, i) {
+      var m = marks ? (marks[i] ? ' <span class="small">· you agreed</span>' : ' <strong class="takeaway">· you disagreed</strong>') : "";
+      return '<div class="line"><p style="margin:0 0 4px"><strong>' + (i + 1) + ".</strong> " + esc(t) + m + '</p><div class="pick" data-i="' + i + '">' +
+        '<button type="button" data-v="yes" aria-pressed="' + (mine[round][i] === "yes") + '">Yes</button><button type="button" data-v="no" aria-pressed="' + (mine[round][i] === "no") + '">No</button></div></div>';
+    }).join("");
+    el("list" + round).querySelectorAll(".pick button").forEach(function (b) {
+      b.onclick = function () {
+        if (marks) return; // answers are fixed once both have sent them
+        mine[round][b.parentNode.getAttribute("data-i")] = b.getAttribute("data-v");
+        b.parentNode.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      };
+    });
+  }
+  function sendRound(round) {
+    if (Object.keys(mine[round]).length < 6) { fb("fb" + round, false, "Answer all six first."); return; }
+    var items = [0, 1, 2, 3, 4, 5].map(function (i) { return { key: "r" + round + "-" + i, value: mine[round][i], secret: true }; });
+    waiting = true; // check often until the partner's answers are in
+    Class.pairPut(items).then(function (d) { fb("fb" + round, !!(d && d.ok), d && d.ok ? "Sent. Waiting for your partner’s answers…" : "Could not send. Check the room code and the pair number."); });
+  }
+  el("send1").onclick = function () { sendRound(1); };
+  el("send2").onclick = function () { sendRound(2); };
+  el("savecrit").onclick = function () {
+    var t = el("crit").value.replace(/\s+/g, " ").trim();
+    if (t.length < 15) { fb("fbc", false, "Write a full sentence that says what to look for."); return; }
+    waiting = true;
+    Class.pairPut([{ key: "criterion", value: t }]).then(function (d) { if (!d || !d.ok) fb("fbc", false, "Could not save."); else tick(); });
+  };
+
+  function matches(v, round) {
+    var out = [];
+    for (var i = 0; i < 6; i++) { var k = v.keys["r" + round + "-" + i]; if (!k || k.match === null) return null; out.push(k.match); }
+    return out;
+  }
+  // Ask the service often only while waiting for the partner; otherwise rarely. Every call counts against a daily limit.
+  var waiting = true, skip = 0;
+  function tick() {
+    if (!Class.pair.id || phase >= 4) return;
+    if (!waiting && (++skip % 4)) return;
+    Class.pairView().then(function (v) {
+      if (!v.ok) return;
+      var ps = el("pairsize"); if (ps) ps.textContent = v.size < 2 ? "Waiting for your partner to join…" : "Your partner has joined.";
+      var sent1 = v.keys["r1-0"] && v.keys["r1-0"].mine, sent2 = v.keys["r2-0"] && v.keys["r2-0"].mine;
+      waiting = v.size < 2 || (phase === 1 && !!sent1) || phase === 2 || (phase === 3 && !!sent2);
+      // After a reload, get this student's own answers back from the service.
+      [1, 2].forEach(function (r) { for (var i = 0; i < 6; i++) { var k = v.keys["r" + r + "-" + i]; if (k && k.mine && !mine[r][i]) mine[r][i] = k.mine; } });
+      var m1 = matches(v, 1);
+      if (m1 && phase < 2) {
+        phase = 2; score[1] = m1.filter(Boolean).length;
+        drawList(1, m1); el("send1").classList.add("hidden"); el("fb1").className = "fb hidden";
+        el("score1").textContent = "You agreed on " + score[1] + " of 6."; show("talk");
+      }
+      var c = v.keys.criterion, text = c && (c.values[0] || c.values[1] || c.values[2]);
+      if (phase === 2 && text) { phase = 3; el("crit2").textContent = text; drawList(2); show("round2"); fb("fbc", true, "Saved for both of you. Go on to round 2."); window.M08crit = text; }
+      var m2 = matches(v, 2);
+      if (m2 && phase === 3) {
+        phase = 4; score[2] = m2.filter(Boolean).length;
+        drawList(2, m2); el("send2").classList.add("hidden"); el("fb2").className = "fb hidden";
+        el("score2").textContent = "Round 1: " + score[1] + " of 6. Round 2: " + score[2] + " of 6."; show("end");
+        if (Class.pair.role === 0 && !sentClass) { // one report per pair
+          sentClass = true;
+          Class.send("m08-r1", String(score[1]), "choice"); Class.send("m08-r2", String(score[2]), "choice"); Class.send("m08-criterion", window.M08crit, "text");
+        }
+      }
+    });
+  }
+  PairBox(el("pairbox"), function () { phase = 1; drawList(1); show("round1"); });
+  Class.every(3000, tick);
+})();
+</script>
+</body>
+</html>

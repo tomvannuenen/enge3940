@@ -70,9 +70,9 @@
     if (!last) { el("bmsg").textContent = "Send a message first."; return; }
     Class.send("m02-break", last, "text").then(function (d) { el("bmsg").textContent = d && d.ok ? "Noted for the class." : "Could not send."; });
   };
-  setInterval(function () {
+  Class.every(5000, function () {
     Class.state(["m02"]).then(function (s) { if (s && s.m02 && s.m02.rules) { rules = s.m02.rules; el("n").textContent = rules.length; } });
-  }, 2500);
+  });
 })();
 </script>
 </body>

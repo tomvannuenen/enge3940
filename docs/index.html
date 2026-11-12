@@ -14,6 +14,12 @@
 
 <p>Short practice pages for the course. Each one runs in your browser and takes about ten minutes. They are not graded.</p>
 
+<div class="box">
+  <label for="joincode"><strong>In class?</strong> Type the room code from the screen:</label>
+  <div class="inline" style="margin-top:6px"><input type="text" id="joincode" maxlength="4" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;max-width:8em"><button type="button" id="joingo">Go</button></div>
+  <p class="takeaway" id="joinmsg" style="margin:6px 0 0"></p>
+</div>
+
 <h2>How to use them</h2>
 <ol>
   <li>Open the page for this week.</li>
@@ -37,5 +43,21 @@
   <p><a href="tutors.html">For tutors</a> · <a href="check.html">Status check</a></p>
 </footer>
 
+<script src="assets/config.js"></script>
+<script>
+(function () {
+  var API = (window.ENGE_API || "").replace(/\/$/, "");
+  function go() {
+    var code = document.getElementById("joincode").value.trim().toUpperCase(), msg = document.getElementById("joinmsg");
+    if (!/^[A-Z]{4}$/.test(code)) { msg.textContent = "A room code has four letters."; return; }
+    fetch(API + "/api/room/" + code + "/state?keys=_activity").then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok && d.state._activity) location.href = d.state._activity.page + "?room=" + code;
+      else msg.textContent = d.ok ? "That room has no activity yet. Ask your tutor." : "No room with that code. Check with your tutor.";
+    }).catch(function () { msg.textContent = "The class service cannot be reached."; });
+  }
+  document.getElementById("joingo").onclick = go;
+  document.getElementById("joincode").onkeydown = function (e) { if (e.key === "Enter") go(); };
+})();
+</script>
 </body>
 </html>

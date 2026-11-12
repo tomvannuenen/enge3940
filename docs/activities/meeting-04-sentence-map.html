@@ -62,7 +62,7 @@
       if (!d || !d.ok) { note(false, "Could not send. Check the room code."); return; }
       note(true, "Sent. You can change your sentence and send it again.");
       el("see").classList.remove("hidden");
-      draw(); clearInterval(timer); timer = setInterval(draw, 4000);
+      clearInterval(timer); timer = Class.every(6000, draw);
     });
   };
   function draw() {

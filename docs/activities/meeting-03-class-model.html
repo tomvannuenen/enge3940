@@ -55,7 +55,7 @@
   }
   el("send").onclick = send;
   el("word").onkeydown = function (e) { if (e.key === "Enter") send(); };
-  setInterval(function () {
+  Class.every(2500, function () {
     Class.state(["m03"]).then(function (s) {
       var st = s && s.m03;
       if (!st || !st.round) return;
@@ -64,7 +64,7 @@
       if (st.done) { el("turn").classList.add("hidden"); el("end").classList.remove("hidden"); return; }
       if (st.round !== round) { round = st.round; el("word").value = ""; el("sent").className = "fb hidden"; el("word").focus(); }
     });
-  }, 1500);
+  });
 })();
 </script>
 </body>

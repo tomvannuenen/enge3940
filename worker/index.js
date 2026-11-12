@@ -125,7 +125,7 @@ export default {
     if (url.pathname === "/api/needs-password") return json({ needed: !!env.TUTOR_PASSWORD });
 
     // /api/room/CODE/...
-    const m = url.pathname.match(/^\/api\/room\/([A-Za-z]{4})\/(info|answer|results|moderate|close|map|generate|publish|state)$/);
+    const m = url.pathname.match(/^\/api\/room\/([A-Za-z]{4})\/(info|answer|results|moderate|close|map|generate|publish|state|pair|pairput|pairview)$/);
     if (!m) return json({ error: "Not found" }, 404);
     const stub = env.ROOMS.get(env.ROOMS.idFromName(m[1].toUpperCase()));
     return stub.fetch("https://room/" + m[2] + url.search, {
@@ -303,6 +303,72 @@ export class Room {
         } catch (e) { /* try the next one */ }
       }
       return json({ error: "The language model did not answer." }, 502);
+    }
+
+    // ---- Pairs. Two (or three) students who sit together share a pair number. ----
+    // POST pair {device, pair?} : without a number, start a new pair; with one, join it.
+    if (action === "pair" && request.method === "POST") {
+      let b;
+      try { b = JSON.parse(await request.text()); } catch (e) { return json({ error: "Bad request" }, 400); }
+      const device = String(b.device || "").slice(0, 40);
+      if (!device) return json({ error: "Bad request" }, 400);
+      if (b.pair === undefined || b.pair === null || b.pair === "") {
+        meta.pairs = (meta.pairs || 0) + 1;
+        if (meta.pairs > 300) return json({ error: "Room is full" }, 429);
+        await this.storage.put("meta", meta);
+        const id = 10 + meta.pairs; // 11, 12, 13 ...
+        await this.storage.put("pair:" + id, { members: [device], data: {} });
+        return json({ ok: true, pair: id, role: 0, size: 1 });
+      }
+      const id = parseInt(b.pair, 10);
+      const pr = await this.storage.get("pair:" + id);
+      if (!pr) return json({ error: "No pair with that number." }, 404);
+      let role = pr.members.indexOf(device);
+      if (role === -1) {
+        if (pr.members.length >= 3) return json({ error: "That pair is full." }, 409);
+        pr.members.push(device); role = pr.members.length - 1;
+        await this.storage.put("pair:" + id, pr);
+      }
+      return json({ ok: true, pair: id, role, size: pr.members.length });
+    }
+
+    // POST pairput {pair, device, key, value, secret} : one member records something.
+    // A secret value is never shown to the partner; the pair only learns whether their values match.
+    if (action === "pairput" && request.method === "POST") {
+      let b;
+      try { b = JSON.parse(await request.text()); } catch (e) { return json({ error: "Bad request" }, 400); }
+      const pr = await this.storage.get("pair:" + parseInt(b.pair, 10));
+      const role = pr ? pr.members.indexOf(String(b.device || "")) : -1;
+      if (role === -1) return json({ error: "You are not in that pair." }, 403);
+      // One value, or several at once in "items".
+      const items = Array.isArray(b.items) ? b.items.slice(0, 20) : [{ key: b.key, value: b.value, secret: b.secret }];
+      for (const it of items) {
+        const key = String(it.key || "").slice(0, 40);
+        const value = String(it.value === undefined ? "" : it.value).slice(0, 300);
+        if (!key) return json({ error: "Bad request" }, 400);
+        if (!pr.data[key]) { if (Object.keys(pr.data).length >= 60) return json({ error: "Too much data" }, 429); pr.data[key] = { secret: !!it.secret, values: {} }; }
+        pr.data[key].values[role] = value;
+      }
+      await this.storage.put("pair:" + parseInt(b.pair, 10), pr);
+      return json({ ok: true });
+    }
+
+    // GET pairview?pair=..&device=.. : what a member may see of the pair's work.
+    if (action === "pairview") {
+      const pr = await this.storage.get("pair:" + parseInt(url.searchParams.get("pair"), 10));
+      const role = pr ? pr.members.indexOf(url.searchParams.get("device") || "") : -1;
+      if (role === -1) return json({ error: "You are not in that pair." }, 403);
+      const size = pr.members.length, keys = {};
+      for (const [k, rec] of Object.entries(pr.data)) {
+        const vals = rec.values, answered = Object.keys(vals).length;
+        if (rec.secret) {
+          const all = answered >= size && size >= 2;
+          keys[k] = { secret: true, mine: vals[role] === undefined ? null : vals[role], answered, match: all ? new Set(Object.values(vals)).size === 1 : null };
+        } else {
+          keys[k] = { values: vals, answered };
+        }
+      }
+      return json({ ok: true, role, size, keys });
     }
 
     // POST publish {key, value} : the tutor's screen puts something on every student's page

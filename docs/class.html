@@ -23,7 +23,7 @@
 <div id="live" class="hidden">
   <p class="small">Room code</p>
   <p class="code" id="code"></p>
-  <p>Students open <strong id="where"></strong> and type the code.</p>
+  <p>Students open <strong id="where"></strong> and type this code in the box at the top.</p>
   <div id="custom"></div>
   <div id="results"></div>
   <p><button type="button" class="plain" id="close">Close the room and delete the answers</button></p>
@@ -76,6 +76,11 @@
       return '<div class="result" id="r-' + q.id + '"><h2>' + esc(q.title) + '</h2><div class="body"></div></div>';
     }).join("");
     poll(); timer = setInterval(poll, 2000);
+    // Tell the room which activity this is, so the front page can send students to the right page.
+    Class.api("room/" + r.code + "/publish", { method: "POST", headers: { "Content-Type": "application/json", "X-Host-Key": r.key }, body: JSON.stringify({ key: "_activity", value: { page: act.page } }) });
+    el("where").textContent = base.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    // Stop asking after 90 minutes, so a screen left open does not use up the daily limit.
+    setTimeout(function () { clearInterval(timer); el("results").insertAdjacentHTML("beforebegin", '<p class="takeaway">This screen has stopped updating after 90 minutes. <button type="button" class="plain" onclick="location.reload()">Resume</button></p>'); }, 90 * 60 * 1000);
     // An activity can add its own controls for the tutor (see its .config.js file).
     if (typeof act.host === "function") act.host({
       code: r.code, el: el("custom"), esc: esc,
