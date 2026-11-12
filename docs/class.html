@@ -24,6 +24,7 @@
   <p class="small">Room code</p>
   <p class="code" id="code"></p>
   <p>Students open <strong id="where"></strong> and type the code.</p>
+  <div id="custom"></div>
   <div id="results"></div>
   <p><button type="button" class="plain" id="close">Close the room and delete the answers</button></p>
 </div>
@@ -75,6 +76,13 @@
       return '<div class="result" id="r-' + q.id + '"><h2>' + esc(q.title) + '</h2><div class="body"></div></div>';
     }).join("");
     poll(); timer = setInterval(poll, 2000);
+    // An activity can add its own controls for the tutor (see its .config.js file).
+    if (typeof act.host === "function") act.host({
+      code: r.code, el: el("custom"), esc: esc,
+      get: function (path) { return Class.api("room/" + r.code + "/" + path, { headers: { "X-Host-Key": r.key } }); },
+      post: function (path, data) { return Class.api("room/" + r.code + "/" + path, { method: "POST", headers: { "Content-Type": "application/json", "X-Host-Key": r.key }, body: JSON.stringify(data) }); },
+      publish: function (key, value) { return Class.api("room/" + r.code + "/publish", { method: "POST", headers: { "Content-Type": "application/json", "X-Host-Key": r.key }, body: JSON.stringify({ key: key, value: value }) }); },
+    });
   }
 
   el("close").onclick = function () {

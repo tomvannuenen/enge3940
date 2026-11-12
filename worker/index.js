@@ -16,6 +16,8 @@ const LETTERS = "BCDFGHJKLMNPQRSTVWXZ"; // consonants only, so a code never spel
 
 const EMBED_MODEL = "@cf/baai/bge-m3";                           // multilingual sentence embeddings
 const TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";   // short written replies
+// Chatbot replies for class games come from several models in turn, so they do not all sound the same.
+const TEXT_MODELS = [TEXT_MODEL, "@cf/mistralai/mistral-small-3.1-24b-instruct", "@cf/google/gemma-4-26b-a4b-it", "@cf/meta/llama-3.1-8b-instruct-fp8"];
 const MAX_EMBED_PER_ROOM = 800;      // sentences placed on a map
 const MAX_GENERATE_PER_ROOM = 80;    // short texts written by the model
 const MAX_CHECKS_PER_DAY = 300;      // model test calls from the status page
@@ -23,9 +25,9 @@ const MAX_CHECKS_PER_DAY = 300;      // model test calls from the status page
 // Fixed writing tasks. The tutor's screen can ask for one of these by name; nothing else.
 const TASKS = {
   "m01-cold-reply": {
-    system: "You are a chat assistant. Reply to the user's message in one or two sentences.",
+    system: "You are a chat assistant. Reply to the user's message in one or two short sentences.",
     user: "It's cold in here.",
-    max_tokens: 60,
+    max_tokens: 80,
   },
 };
 
@@ -123,7 +125,7 @@ export default {
     if (url.pathname === "/api/needs-password") return json({ needed: !!env.TUTOR_PASSWORD });
 
     // /api/room/CODE/...
-    const m = url.pathname.match(/^\/api\/room\/([A-Za-z]{4})\/(info|answer|results|moderate|close|map|generate)$/);
+    const m = url.pathname.match(/^\/api\/room\/([A-Za-z]{4})\/(info|answer|results|moderate|close|map|generate|publish|state)$/);
     if (!m) return json({ error: "Not found" }, 404);
     const stub = env.ROOMS.get(env.ROOMS.idFromName(m[1].toUpperCase()));
     return stub.fetch("https://room/" + m[2] + url.search, {
@@ -285,15 +287,50 @@ export class Room {
       if ((meta.generated || 0) >= MAX_GENERATE_PER_ROOM) return json({ error: "This room has reached its limit for model writing." }, 429);
       meta.generated = (meta.generated || 0) + 1;
       await this.storage.put("meta", meta);
-      try {
-        const res = await this.env.AI.run(TEXT_MODEL, {
-          messages: [{ role: "system", content: task.system }, { role: "user", content: task.user }],
-          max_tokens: task.max_tokens, temperature: 1,
-        });
-        return json({ ok: true, text: String(res.response || "").trim(), usage: res.usage || null, model: TEXT_MODEL });
-      } catch (e) {
-        return json({ error: "The language model did not answer." }, 502);
+      const input = {
+        messages: [{ role: "system", content: task.system }, { role: "user", content: task.user }],
+        max_tokens: task.max_tokens, temperature: 1,
+      };
+      // Try the model whose turn it is; if it fails or says nothing, use the main one.
+      const order = [TEXT_MODELS[(meta.generated - 1) % TEXT_MODELS.length], TEXT_MODEL];
+      for (const model of order) {
+        try {
+          const res = await this.env.AI.run(model, input);
+          let text = String(res.response || "").replace(/<think>[\s\S]*?<\/think>/g, "").replace(/\s+/g, " ").trim();
+          const end = Math.max(text.lastIndexOf("."), text.lastIndexOf("!"), text.lastIndexOf("?"));
+          if (end > 20) text = text.slice(0, end + 1); // drop a sentence that was cut off
+          if (text.length > 10) return json({ ok: true, text, usage: res.usage || null, model });
+        } catch (e) { /* try the next one */ }
       }
+      return json({ error: "The language model did not answer." }, 502);
+    }
+
+    // POST publish {key, value} : the tutor's screen puts something on every student's page
+    // (the sentence so far, a list of lines to judge, the class's rules). Students read it with "state".
+    if (action === "publish" && request.method === "POST") {
+      if (!isHost) return json({ error: "Not allowed" }, 403);
+      const raw = await request.text();
+      if (raw.length > 40000) return json({ error: "Too large" }, 413);
+      let b;
+      try { b = JSON.parse(raw); } catch (e) { return json({ error: "Bad request" }, 400); }
+      const key = String(b.key || "").slice(0, 40);
+      if (!key) return json({ error: "Bad request" }, 400);
+      meta.published = meta.published || [];
+      if (!meta.published.includes(key)) {
+        if (meta.published.length >= 30) return json({ error: "Room is full" }, 429);
+        meta.published.push(key);
+        await this.storage.put("meta", meta);
+      }
+      await this.storage.put("p:" + key, b.value === undefined ? null : b.value);
+      return json({ ok: true });
+    }
+
+    // GET state?keys=a,b : what the tutor's screen has published
+    if (action === "state") {
+      const keys = (url.searchParams.get("keys") || "").split(",").filter(Boolean).slice(0, 30);
+      const out = {};
+      for (const k of keys) out[k] = (await this.storage.get("p:" + k)) ?? null;
+      return json({ ok: true, state: out });
     }
 
     if (action === "moderate" && request.method === "POST") {

@@ -67,3 +67,16 @@ button.plain:hover { background: #f6f6f6; }
 .shade { font-size: 22px; line-height: 1.6; }
 .shade span { padding: 2px 0; }
 .shade sup { color: #6b6b6b; font-size: 13px; }
+
+/* class activities */
+.big { font-size: 30px; line-height: 1.3; color: #333; margin: 0 0 12px; }
+.line { border-top: 1px solid #bfbfbf; padding: 10px 0; }
+.line:last-child { border-bottom: 1px solid #bfbfbf; }
+.line label { cursor: pointer; }
+.pick button { margin: 6px 8px 0 0; }
+.pick button[aria-pressed="true"] { background: #bf0000; border-color: #bf0000; }
+.chat { background: #ededed; padding: 12px 14px; min-height: 120px; margin: 0 0 8px; }
+.chat p { margin: 0 0 6px; }
+.chat .bot { color: #1f4f5e; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; }

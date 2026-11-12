@@ -34,6 +34,11 @@
     results: function (code, qs, key) {
       return api("room/" + code + "/results?q=" + encodeURIComponent(qs.join(",")), { headers: key ? { "X-Host-Key": key } : {} });
     },
+    // What the tutor's screen has published to the room.
+    state: function (keys) {
+      if (!room) return Promise.resolve(null);
+      return api("room/" + room + "/state?keys=" + encodeURIComponent(keys.join(","))).then(function (d) { return d.ok ? d.state : null; }).catch(function () { return null; });
+    },
     api: api,
   };
   window.Class = Class;
@@ -61,5 +66,5 @@
     }).catch(function () { draw("The class service cannot be reached. You can still do the page alone."); });
   }
   var fromUrl = new URLSearchParams(location.search).get("room");
-  if (fromUrl && !room) { draw(); join(fromUrl); } else draw();
+  if (fromUrl && fromUrl.toUpperCase() !== room) { room = null; draw(); join(fromUrl); } else draw(); // a code in the link replaces an older room
 })();

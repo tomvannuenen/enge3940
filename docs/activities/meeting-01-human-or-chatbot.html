@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human or chatbot? · ENGE3940</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<p class="course"><a href="../index.html">ENGE3940 AI and Language</a> · Meeting 1 · in class · not graded</p>
+<h1>Human or chatbot?</h1>
+
+<div id="classbar"></div>
+
+<section id="write">
+  <h2>1. Write a reply</h2>
+  <div class="box"><span class="label">A friend says</span><p>It’s cold in here.</p></div>
+  <p>Write what you would say back, as you would to a friend. One or two sentences, in English. No names.</p>
+  <textarea id="reply" maxlength="180"></textarea>
+  <p><button type="button" id="send">Send</button></p>
+  <div class="fb hidden" id="sent"></div>
+</section>
+
+<section id="guess" class="hidden">
+  <h2 id="gtitle">2. Who wrote it?</h2>
+  <p id="ghelp">Some of these replies were written by people in this room. Some were written by a chatbot. Choose for each one.</p>
+  <div id="list"></div>
+</section>
+
+<section id="end" class="hidden">
+  <h2>Recap</h2>
+  <ul>
+    <li>Look at the replies the class got wrong. What made a person sound like a chatbot, or a chatbot like a person?</li>
+    <li>Chatbot replies often treat the remark as a request for help. A friend may joke, agree or ask who left the window open.</li>
+    <li>Quote the exact words that gave it away. That is close reading.</li>
+  </ul>
+  <p class="takeaway">Which words gave the chatbot away?</p>
+</section>
+
+<footer class="small"><p>With a room code, your reply goes to your tutor without your name. The tutor chooses which replies the class sees. Everything is deleted within 12 hours.</p></footer>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/class.js"></script>
+<script>
+(function () {
+  var mine = {}, phase = "write", shownItems = "";
+  function el(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  el("send").onclick = function () {
+    var t = el("reply").value.replace(/\s+/g, " ").trim(), f = el("sent");
+    if (!Class.room()) { f.className = "fb no"; f.textContent = "This activity needs a room code from your tutor. Type it at the top of the page."; return; }
+    if (t.length < 5) { f.className = "fb no"; f.textContent = "Write a reply first."; return; }
+    Class.send("m01b-reply", t, "text").then(function (d) {
+      f.className = "fb " + (d && d.ok ? "ok" : "no");
+      f.textContent = d && d.ok ? "Sent. You can change it and send it again. Now wait for your tutor." : "Could not send. Check the room code.";
+    });
+  };
+  function draw(st) {
+    var key = st.phase + st.items.map(function (i) { return i.id; }).join(",");
+    if (key === shownItems && st.phase !== "reveal") return;
+    shownItems = key;
+    el("list").innerHTML = st.items.map(function (it) {
+      var body = '<p style="margin:0 0 4px">' + esc(it.text) + "</p>";
+      if (st.phase === "reveal") {
+        var ok = mine[it.id] === it.label;
+        body += '<p class="small" style="margin:0"><strong class="takeaway">Written by a ' + it.label + ".</strong> " + (mine[it.id] ? (ok ? "You were right." : "You said: a " + mine[it.id] + ".") : "") + ' <span id="c-' + it.id + '"></span></p>';
+      } else {
+        body += '<div class="pick" data-id="' + it.id + '"><button type="button" data-v="person" aria-pressed="' + (mine[it.id] === "person") + '">A person</button><button type="button" data-v="chatbot" aria-pressed="' + (mine[it.id] === "chatbot") + '">A chatbot</button></div>';
+      }
+      return '<div class="line">' + body + "</div>";
+    }).join("");
+    el("list").querySelectorAll(".pick button").forEach(function (b) {
+      b.onclick = function () {
+        var id = b.parentNode.getAttribute("data-id"), v = b.getAttribute("data-v");
+        mine[id] = v; Class.send("m01b-g-" + id, v, "choice");
+        b.parentNode.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      };
+    });
+    if (st.phase === "reveal") {
+      Class.api("room/" + Class.room() + "/results?q=" + st.items.map(function (i) { return "m01b-g-" + i.id; }).join(",")).then(function (d) {
+        if (!d.ok) return;
+        st.items.forEach(function (it) {
+          var c = (d.results["m01b-g-" + it.id] || {}).counts || {}, n = (c.person || 0) + (c.chatbot || 0);
+          var s = document.getElementById("c-" + it.id);
+          if (s && n) s.textContent = "The class: " + (c[it.label] || 0) + " of " + n + " right.";
+        });
+      });
+    }
+  }
+  setInterval(function () {
+    Class.state(["m01b"]).then(function (s) {
+      var st = s && s.m01b;
+      if (!st) return;
+      el("write").classList.add("hidden"); el("guess").classList.remove("hidden");
+      if (st.phase === "reveal") { el("gtitle").textContent = "3. Who wrote what"; el("ghelp").classList.add("hidden"); el("end").classList.remove("hidden"); }
+      draw(st);
+    });
+  }, 2000);
+})();
+</script>
+</body>
+</html>

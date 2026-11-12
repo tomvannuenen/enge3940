@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build ELIZA together · ENGE3940</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<p class="course"><a href="../index.html">ENGE3940 AI and Language</a> · Meeting 2 · in class · not graded</p>
+<h1>Build ELIZA together</h1>
+
+<div id="classbar"></div>
+
+<p>ELIZA was a program from 1966 that seemed to hold a conversation. It only followed rules written by hand: if the message contains a certain word, give a certain reply. Today the class writes the rules.</p>
+
+<section>
+  <h2>1. Write one rule</h2>
+  <div class="row"><label for="k">If the message contains this word or phrase</label><input type="text" id="k" maxlength="30" autocomplete="off" autocapitalize="none"></div>
+  <div class="row"><label for="r">the program replies</label><input type="text" id="r" maxlength="120" autocomplete="off"></div>
+  <button type="button" id="send">Send my rule</button>
+  <div class="fb hidden" id="sent"></div>
+  <p class="small">Example: if the message contains “exam”, reply “How do you feel about the exam?” Keep to everyday topics.</p>
+</section>
+
+<section>
+  <h2>2. Talk to the class’s program</h2>
+  <p>It knows <strong id="n">0</strong> rules. Try to get a reply that makes no sense.</p>
+  <div class="chat" id="chat"><p class="bot">Program: Hello. How are you today?</p></div>
+  <div class="inline"><input type="text" id="msg" maxlength="140" autocomplete="off"><button type="button" id="say">Send</button></div>
+  <p><button type="button" class="plain" id="broke">That reply made no sense</button> <span class="small" id="bmsg"></span></p>
+</section>
+
+<section>
+  <h2>Recap</h2>
+  <ul>
+    <li>The program finds a keyword and gives the reply written for it. It has no idea what the message is about.</li>
+    <li>People still felt that ELIZA understood them. Much of the meaning came from the person reading the replies.</li>
+    <li>Today’s chatbots do not use hand-written rules like these. They predict text. That is next.</li>
+  </ul>
+  <p class="takeaway">Which of our rules worked best, and why?</p>
+</section>
+
+<footer class="small"><p>With a room code, your rule goes to your tutor without your name. The tutor chooses which rules the class sees. Everything is deleted within 12 hours.</p></footer>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/class.js"></script>
+<script>
+(function () {
+  var rules = [], last = "";
+  function el(id) { return document.getElementById(id); }
+  function say(who, text) { var p = document.createElement("p"); if (who === "Program") p.className = "bot"; p.textContent = who + ": " + text; el("chat").appendChild(p); el("chat").scrollTop = 1e6; }
+  function note(ok, text) { el("sent").className = "fb " + (ok ? "ok" : "no"); el("sent").textContent = text; }
+  el("send").onclick = function () {
+    var k = el("k").value.trim().toLowerCase(), r = el("r").value.trim();
+    if (!Class.room()) { note(false, "This activity needs a room code from your tutor. Type it at the top of the page."); return; }
+    if (k.length < 2 || r.length < 3) { note(false, "Fill in both parts of the rule."); return; }
+    Class.send("m02-rule", k + " => " + r, "text").then(function (d) { note(!!(d && d.ok), d && d.ok ? "Sent. Your tutor adds rules to the program. You can change your rule and send it again." : "Could not send. Check the room code."); });
+  };
+  function reply(m) {
+    var low = m.toLowerCase();
+    for (var i = 0; i < rules.length; i++) if (low.indexOf(rules[i].k) !== -1) return rules[i].r;
+    return "Please go on.";
+  }
+  function talk() { var m = el("msg").value.trim(); if (!m) return; last = m; say("You", m); say("Program", reply(m)); el("msg").value = ""; }
+  el("say").onclick = talk;
+  el("msg").onkeydown = function (e) { if (e.key === "Enter") talk(); };
+  el("broke").onclick = function () {
+    if (!last) { el("bmsg").textContent = "Send a message first."; return; }
+    Class.send("m02-break", last, "text").then(function (d) { el("bmsg").textContent = d && d.ok ? "Noted for the class." : "Could not send."; });
+  };
+  setInterval(function () {
+    Class.state(["m02"]).then(function (s) { if (s && s.m02 && s.m02.rules) { rules = s.m02.rules; el("n").textContent = rules.length; } });
+  }, 2500);
+})();
+</script>
+</body>
+</html>

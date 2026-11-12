@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The class is the model · ENGE3940</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<p class="course"><a href="../index.html">ENGE3940 AI and Language</a> · Meeting 3 · in class · not graded</p>
+<h1>The class is the model</h1>
+
+<div id="classbar"></div>
+
+<p>A language model writes one word at a time. For each word it has a list of likely next words, and it picks one. Today the class is the model: everyone suggests the next word, and one word is chosen from all the answers.</p>
+
+<div id="wait" class="box"><p>Type the room code above. Then wait for your tutor to start a sentence.</p></div>
+
+<section id="play" class="hidden">
+  <h2>The sentence so far</h2>
+  <p class="big" id="text"></p>
+  <div id="turn">
+    <label for="word">Your next word (one word only)</label>
+    <div class="inline"><input type="text" id="word" maxlength="30" autocomplete="off" autocapitalize="none"><button type="button" id="send">Send</button></div>
+    <div class="fb hidden" id="sent"></div>
+  </div>
+</section>
+
+<section id="end" class="hidden">
+  <h2>Recap</h2>
+  <ul>
+    <li>For each word, the class had a spread of answers: a few common ones and many rare ones. A language model has the same kind of list.</li>
+    <li>Taking the top word every time gives a safe, expected sentence.</li>
+    <li>Drawing a word at random gives a different sentence each time. Chatbots do this, which is why the same question can get different answers.</li>
+  </ul>
+  <p class="takeaway">Which word in our sentence would a chatbot not have chosen?</p>
+</section>
+
+<footer class="small"><p>With a room code, your words go to the class screen without your name and are deleted within 12 hours.</p></footer>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/class.js"></script>
+<script>
+(function () {
+  var round = 0;
+  function el(id) { return document.getElementById(id); }
+  function send() {
+    var w = el("word").value.trim().split(/\s+/)[0] || "";
+    if (!w) return;
+    Class.send("m03-r" + round, w, "word").then(function (d) {
+      el("sent").className = "fb " + (d && d.ok ? "ok" : "no");
+      el("sent").textContent = d && d.ok ? "Sent: “" + w.toLowerCase() + "”. You can change it until the next word is chosen." : "Could not send. Check the room code.";
+    });
+  }
+  el("send").onclick = send;
+  el("word").onkeydown = function (e) { if (e.key === "Enter") send(); };
+  setInterval(function () {
+    Class.state(["m03"]).then(function (s) {
+      var st = s && s.m03;
+      if (!st || !st.round) return;
+      el("wait").classList.add("hidden"); el("play").classList.remove("hidden");
+      el("text").textContent = st.text + (st.done ? "" : " …");
+      if (st.done) { el("turn").classList.add("hidden"); el("end").classList.remove("hidden"); return; }
+      if (st.round !== round) { round = st.round; el("word").value = ""; el("sent").className = "fb hidden"; el("word").focus(); }
+    });
+  }, 1500);
+})();
+</script>
+</body>
+</html>
