@@ -12,6 +12,8 @@
 <p class="course"><a href="../index.html">ENGE3940 AI and Language</a> · Meeting 1 · about 10 minutes · not graded</p>
 <h1>Read a response closely</h1>
 
+<div id="classbar"></div>
+
 <p>Close reading means looking at the exact words of a response and asking what they do. On this page you read two chatbot responses to a riddle.</p>
 
 <!-- ============================== 1 -->
@@ -30,7 +32,7 @@
   <p>A boy is hurt in a car accident and taken to hospital. The surgeon, <strong>who is the boy’s father</strong>, looks at him and says, “I can’t operate on this boy. He’s my son.” Who is the surgeon?</p>
 </div>
 
-<div class="q" data-correct="any" data-unlock="step2">
+<div class="q" data-correct="any" data-unlock="step2" data-qid="m01-predict">
   <p>What do you expect the chatbot to answer?</p>
   <label class="opt"><input type="radio" name="q1" value="a">The boy’s father</label>
   <label class="opt"><input type="radio" name="q1" value="b">The boy’s mother</label>
@@ -54,7 +56,7 @@
   <p id="resp1">You answered the riddle in your own question! Based on the way you wrote the prompt, the surgeon is the boy’s father. However, in the classic version of this riddle (which usually starts with “A father and son are in a car accident...”), the answer is the boy’s mother (or his other father).</p>
 </div>
 
-<div class="q" data-correct="b" data-unlock="step3">
+<div class="q" data-correct="b" data-unlock="step3" data-qid="m01-summary">
   <p>Which sentence sums up the response best?</p>
   <label class="opt"><input type="radio" name="q2" value="a">The surgeon is the boy’s mother.</label>
   <label class="opt"><input type="radio" name="q2" value="b">The surgeon is the boy’s father, and the well-known riddle has a different answer.</label>
@@ -69,8 +71,21 @@
 
 <!-- ============================== 3 -->
 <section id="step3" class="hidden">
-<h2>3. Second reading: how is it written?</h2>
-<p>Here is the same response in four parts. For each part, choose what the words do.</p>
+<h2>3. Second reading: where do you look?</h2>
+<p>Here is the same response in four parts. Tap the one part that says most about <em>you</em>, the person who asked.</p>
+
+<div class="tap" data-qid="m01-phrase" data-unlock="step3b">
+  <button type="button" class="part" data-value="p1">“You answered the riddle in your own question!”</button>
+  <button type="button" class="part" data-value="p2">“Based on the way you wrote the prompt,”</button>
+  <button type="button" class="part" data-value="p3">“the surgeon is the boy’s father.”</button>
+  <button type="button" class="part" data-value="p4">“However, in the classic version of this riddle … the answer is the boy’s mother (or his other father).”</button>
+  <div class="fb hidden" data-note="Readers choose differently here. Many pick the first part, which speaks to you directly, or the last, which guesses what you wanted. You can change your choice."></div>
+</div>
+</section>
+
+<section id="step3b" class="hidden">
+<h2>4. How is it written?</h2>
+<p>Now choose what each part does.</p>
 
 <div class="match" data-unlock="step4">
   <div class="row">
@@ -123,7 +138,7 @@
 
 <!-- ============================== 4 -->
 <section id="step4" class="hidden">
-<h2>4. Your turn: a second response</h2>
+<h2>5. Your turn: a second response</h2>
 <p>Another chatbot got the same changed riddle.</p>
 
 <div class="box">
@@ -131,7 +146,7 @@
   <p id="resp2">In the classic riddle, the surgeon is the boy’s mother. But as worded here—“The surgeon, who is the boy’s father…”—the surgeon is explicitly stated to be the boy’s father. So the answer depends on whether that phrase was intentional.</p>
 </div>
 
-<div class="q" data-correct="a">
+<div class="q" data-correct="a" data-qid="m01-first">
   <p>Which answer does this response give first?</p>
   <label class="opt"><input type="radio" name="q4" value="a">The answer to the well-known riddle</label>
   <label class="opt"><input type="radio" name="q4" value="b">The answer to our version</label>
@@ -142,7 +157,7 @@
 </div>
 
 <p>Now write a reading card for this response, as you will in the tutorial.</p>
-<div class="card" data-source="resp2" data-unlock="samples">
+<div class="card" data-source="resp2" data-unlock="samples" data-qid="m01-card">
   <div class="row">
     <label for="phrase"><strong>1. The phrase.</strong> Copy it exactly from the response.</label>
     <input type="text" id="phrase" name="phrase" autocomplete="off">
@@ -194,9 +209,11 @@
 
 <footer class="small">
   <p>The responses were saved on the dates shown. Chatbots change, so yours may answer differently.</p>
-  <p>Nothing you type on this page leaves your browser.</p>
+  <p>Working alone, nothing you type on this page leaves your browser. With a room code, your answers go to the class screen without your name and are deleted within 12 hours.</p>
 </footer>
 
+<script src="../assets/config.js"></script>
+<script src="../assets/class.js"></script>
 <script src="../assets/activity.js"></script>
 </body>
 </html>

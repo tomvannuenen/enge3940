@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Class view · ENGE3940</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="wide">
+
+<p class="course"><a href="index.html">ENGE3940 AI and Language</a> · Class view for tutors</p>
+<h1 id="title">Class view</h1>
+
+<div id="start">
+  <p>Open a room for this activity. Students type the room code on the activity page, and their answers appear here without names.</p>
+  <p>Answers are deleted when you close the room, or after 12 hours.</p>
+  <button type="button" id="open">Open a room</button>
+  <p id="msg" class="takeaway"></p>
+</div>
+
+<div id="live" class="hidden">
+  <p class="small">Room code</p>
+  <p class="code" id="code"></p>
+  <p>Students open <strong id="where"></strong> and type the code.</p>
+  <div id="results"></div>
+  <p><button type="button" class="plain" id="close">Close the room and delete the answers</button></p>
+</div>
+
+<footer class="small">
+  <p>No names or accounts are collected. Reading cards are listed here only after you choose to open them.</p>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/class.js"></script>
+<script>
+(function () {
+  var a = (new URLSearchParams(location.search).get("a") || "meeting-01").replace(/[^a-z0-9-]/g, "");
+  var store = window.sessionStorage, timer = null, act = null, room = null;
+  function el(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  var sc = document.createElement("script");
+  sc.src = "activities/" + a + ".config.js";
+  sc.onload = function () {
+    act = window.ACTIVITY;
+    el("title").textContent = "Class view: " + act.title;
+    var saved = null;
+    try { saved = JSON.parse(store.getItem("enge-host-" + act.id)); } catch (e) {}
+    if (saved) Class.api("room/" + saved.code + "/info").then(function (d) { if (d.ok) start(saved); });
+  };
+  sc.onerror = function () { el("msg").textContent = "No activity with that name."; };
+  document.body.appendChild(sc);
+
+  el("open").onclick = function () {
+    if (!window.ENGE_CLASS_AVAILABLE) { el("msg").textContent = "The class service is not set up on this copy of the site."; return; }
+    Class.api("room", { method: "POST" }).then(function (d) {
+      if (!d.code) { el("msg").textContent = d.error || "Could not open a room."; return; }
+      var r = { code: d.code, key: d.key };
+      store.setItem("enge-host-" + act.id, JSON.stringify(r));
+      start(r);
+    }).catch(function () { el("msg").textContent = "The class service cannot be reached."; });
+  };
+
+  function start(r) {
+    room = r;
+    el("start").classList.add("hidden"); el("live").classList.remove("hidden");
+    el("code").textContent = r.code;
+    var base = new URL(".", location.href).href;
+    el("where").textContent = base.replace(/^https?:\/\//, "") + act.page;
+    el("results").innerHTML = act.questions.map(function (q) {
+      return '<div class="result" id="r-' + q.id + '"><h2>' + esc(q.title) + '</h2><div class="body"></div></div>';
+    }).join("");
+    poll(); timer = setInterval(poll, 2000);
+  }
+
+  el("close").onclick = function () {
+    if (!confirm("Close the room and delete all answers?")) return;
+    Class.api("room/" + room.code + "/close", { method: "POST", headers: { "X-Host-Key": room.key } }).then(function () {
+      clearInterval(timer); store.removeItem("enge-host-" + act.id); location.reload();
+    });
+  };
+
+  function poll() {
+    Class.results(room.code, act.questions.map(function (q) { return q.id; }), room.key).then(function (d) {
+      if (!d.ok) return;
+      act.questions.forEach(function (q) { render(q, d.results[q.id] || { n: 0, counts: {}, items: [] }); });
+    }).catch(function () {});
+  }
+
+  function render(q, res) {
+    var body = document.querySelector("#r-" + q.id + " .body");
+    var n = '<p class="small">' + res.n + (res.n === 1 ? " answer" : " answers") + "</p>";
+    if (q.type === "choice") {
+      var max = Math.max.apply(null, Object.keys(q.options).map(function (k) { return (res.counts || {})[k] || 0; }).concat([1]));
+      body.innerHTML = n + Object.keys(q.options).map(function (k) {
+        var c = (res.counts || {})[k] || 0;
+        return '<div class="barrow"><div>' + esc(q.options[k]) + '</div><div class="track"><div class="fill" style="width:' + Math.round(100 * c / max) + '%"></div></div><div>' + c + "</div></div>";
+      }).join("");
+    } else if (q.type === "shade") {
+      var top = Math.max.apply(null, Object.keys(q.parts).map(function (k) { return (res.counts || {})[k] || 0; }).concat([1]));
+      body.innerHTML = n + '<p class="shade">' + Object.keys(q.parts).map(function (k) {
+        var c = (res.counts || {})[k] || 0;
+        return '<span style="background: rgba(191,0,0,' + (0.55 * c / top).toFixed(2) + ')">' + esc(q.parts[k]) + "</span><sup> " + c + "</sup> ";
+      }).join("") + "</p>";
+    } else if (q.type === "word") {
+      var words = Object.keys(res.counts || {}).sort(function (x, y) { return res.counts[y] - res.counts[x]; });
+      var wmax = Math.max.apply(null, words.map(function (w) { return res.counts[w]; }).concat([1]));
+      body.innerHTML = n + words.slice(0, 15).map(function (w) {
+        return '<div class="barrow"><div>' + esc(w) + '</div><div class="track"><div class="fill" style="width:' + Math.round(100 * res.counts[w] / wmax) + '%"></div></div><div>' + res.counts[w] + "</div></div>";
+      }).join("");
+    } else if (q.type === "text") {
+      // Kept closed until the tutor opens it, because this screen may be on the projector.
+      var open = body.querySelector("details") && body.querySelector("details").open;
+      body.innerHTML = n + "<details" + (open ? " open" : "") + "><summary>Read the cards</summary><ul>" +
+        (res.items || []).map(function (i) { return "<li>" + esc(i.text) + "</li>"; }).join("") + "</ul></details>";
+    }
+  }
+})();
+</script>
+</body>
+</html>

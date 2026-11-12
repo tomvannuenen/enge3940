@@ -46,3 +46,24 @@ th { color: #1f4f5e; }
 .list li { border-top: 1px solid #bfbfbf; padding: 12px 0; margin: 0; }
 .list li:last-child { border-bottom: 1px solid #bfbfbf; }
 footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid #bfbfbf; }
+
+/* class mode */
+#classbar { background: #ededed; padding: 8px 12px; margin: 0 0 16px; font-size: 15px; }
+#classbar input { width: 5.5em; text-transform: uppercase; }
+button.plain { background: #fff; color: #1f4f5e; padding: 4px 10px; }
+button.plain:hover { background: #f6f6f6; }
+.tap .part { display: block; width: 100%; text-align: left; background: #ededed; color: #333; border: 2px solid #ededed; margin: 0 0 6px; padding: 10px 12px; }
+.tap .part:hover { background: #e4e4e4; }
+.tap .part[aria-pressed="true"] { border-color: #1f4f5e; background: #dce9e8; }
+
+/* class view (tutor's screen) */
+.wide { max-width: 900px; }
+.code { font-size: 64px; letter-spacing: 8px; line-height: 1.1; margin: 0 0 4px; color: #333; }
+.result { margin: 0 0 28px; }
+.result h2 { margin-top: 28px; }
+.barrow { display: grid; grid-template-columns: minmax(120px, 2fr) 3fr 3em; gap: 10px; align-items: center; margin: 0 0 6px; }
+.barrow .track { background: #ededed; height: 22px; }
+.barrow .fill { background: #1f4f5e; height: 22px; }
+.shade { font-size: 22px; line-height: 1.6; }
+.shade span { padding: 2px 0; }
+.shade sup { color: #6b6b6b; font-size: 13px; }

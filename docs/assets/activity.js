@@ -5,6 +5,11 @@
     box.className = "fb " + (ok ? "ok" : "no");
     box.innerHTML = html;
   }
+  // In class mode (a room code was typed), the answer also goes to the class screen, without a name.
+  function send(el, value, kind) {
+    var qid = el.getAttribute("data-qid");
+    if (qid && window.Class) window.Class.send(qid, value, kind);
+  }
   function unlock(el) {
     var next = el.getAttribute("data-unlock");
     if (next) show(document.getElementById(next));
@@ -20,6 +25,7 @@
       var note = q.querySelector('[data-note="' + picked.value + '"]');
       var ok = q.getAttribute("data-correct") === "any" || picked.value === q.getAttribute("data-correct");
       feedback(out, ok, note ? note.innerHTML : (ok ? "Yes." : "Not quite."));
+      send(q, picked.value, "choice");
       unlock(q);
     });
   });
@@ -41,6 +47,21 @@
     });
   });
 
+  // Tap one part of a text: <div class="tap" data-qid=".." data-unlock=".."><button class="part" data-value="p1">..</button>..<div class="fb hidden" data-note="..."></div></div>
+  document.querySelectorAll(".tap").forEach(function (t) {
+    var out = t.querySelector(".fb");
+    t.querySelectorAll(".part").forEach(function (btn) {
+      btn.setAttribute("aria-pressed", "false");
+      btn.addEventListener("click", function () {
+        t.querySelectorAll(".part").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+        feedback(out, true, out.getAttribute("data-note"));
+        send(t, btn.getAttribute("data-value"), "choice");
+        unlock(t);
+      });
+    });
+  });
+
   // Reading card: the phrase has to be copied exactly from the response.
   document.querySelectorAll(".card").forEach(function (c) {
     var btn = c.querySelector("button");
@@ -56,6 +77,7 @@
       if (!does) { feedback(out, false, "Say what the phrase does."); return; }
       if (why.length < 8) { feedback(out, false, "Write one sentence on why."); return; }
       feedback(out, true, "Your card is complete: the phrase is copied exactly, and you said what it does and why.");
+      send(c, "“" + c.querySelector("[name=phrase]").value.trim() + "” · " + does.split(":")[0] + " · " + why, "text");
       unlock(c);
     });
   });
