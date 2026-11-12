@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Status check · ENGE3940</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<p class="course"><a href="index.html">ENGE3940 AI and Language</a> · Status check</p>
+<h1>Does the site work from here?</h1>
+<p>This page tests each part of the course site from your device and network. It takes a few seconds and sends nothing about you.</p>
+
+<table id="checks">
+  <tr><th>Part</th><th>Result</th></tr>
+  <tr><td>1. This page loaded</td><td id="c1">…</td></tr>
+  <tr><td>2. The class service answers</td><td id="c2">…</td></tr>
+  <tr><td>3. The class service can store answers</td><td id="c3">…</td></tr>
+  <tr><td>4. The language model answers</td><td id="c4">…</td></tr>
+</table>
+
+<p id="verdict" class="takeaway"></p>
+
+<h2>If Tom asked you to run this</h2>
+<p>Please copy the text below and send it to him. Thank you.</p>
+<textarea id="report" readonly rows="8"></textarea>
+<p><button type="button" id="copy">Copy</button> <button type="button" class="plain" id="again">Run again</button></p>
+
+<script src="assets/config.js"></script>
+<script>
+(function () {
+  var API = (window.ENGE_API || "").replace(/\/$/, "");
+  function el(id) { return document.getElementById(id); }
+  function mark(id, ok, text) { el(id).textContent = (ok ? "OK" : "FAILED") + (text ? " · " + text : ""); el(id).style.color = ok ? "#1f4f5e" : "#bf0000"; }
+  function run() {
+    ["c2", "c3", "c4"].forEach(function (id) { el(id).textContent = "…"; el(id).style.color = ""; });
+    el("verdict").textContent = "";
+    var lines = ["ENGE3940 status check", new Date().toISOString(), "Page: " + location.host];
+    mark("c1", true, location.host);
+    var t0 = Date.now();
+    fetch(API + "/api/check", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      var ms = Date.now() - t0;
+      mark("c2", true, ms + " ms, Cloudflare data centre " + (d.colo || "?") + (d.country ? ", country " + d.country : ""));
+      mark("c3", d.storage === "ok", d.storage_ms + " ms");
+      if (d.model === "skipped") { el("c4").textContent = "Not tested (today's test limit is reached)"; }
+      else mark("c4", d.model === "ok", (d.model_ms || "?") + " ms");
+      var all = d.storage === "ok" && d.model !== "failed";
+      el("verdict").textContent = all ? "Everything works from this network." : "Something failed. Please send the report below.";
+      lines.push("Service: OK " + ms + " ms, data centre " + (d.colo || "?") + ", country " + (d.country || "?"));
+      lines.push("Storage: " + d.storage + " " + d.storage_ms + " ms");
+      lines.push("Model: " + d.model + (d.model_ms ? " " + d.model_ms + " ms" : ""));
+      done(lines);
+    }).catch(function (e) {
+      mark("c2", false, "could not reach " + (API || location.host));
+      el("c3").textContent = "Not tested"; el("c4").textContent = "Not tested";
+      el("verdict").textContent = "The class service cannot be reached from this network. The pages still work for one person alone.";
+      lines.push("Service: FAILED (" + e.message + ")");
+      done(lines);
+    });
+  }
+  function done(lines) {
+    lines.push("Browser: " + navigator.userAgent.replace(/\s*\(.*?\)/, "").slice(0, 80));
+    el("report").value = lines.join("\n");
+  }
+  el("copy").onclick = function () { el("report").select(); try { navigator.clipboard.writeText(el("report").value); } catch (e) { document.execCommand("copy"); } };
+  el("again").onclick = run;
+  run();
+})();
+</script>
+</body>
+</html>

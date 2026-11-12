@@ -15,3 +15,7 @@ class_name = "Room"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
+
+# Language models run by Cloudflare (Workers AI). See the rules at the top of worker/index.js.
+[ai]
+binding = "AI"

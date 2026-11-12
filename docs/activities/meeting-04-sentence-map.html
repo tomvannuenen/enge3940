@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A map of our sentences · ENGE3940</title>
+<meta name="description" content="Meeting 4 class activity: everyone writes a sentence with the same word, and a language model places the sentences on a map.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<p class="course"><a href="../index.html">ENGE3940 AI and Language</a> · Meeting 4 · in class · not graded</p>
+<h1>A map of our sentences</h1>
+
+<div id="classbar"></div>
+
+<p>Everyone writes one sentence with the same word. A language model turns each sentence into numbers and places it on a map. Sentences it treats as similar land close together.</p>
+
+<section id="write">
+<h2>1. Write one sentence</h2>
+<p>Use the word <strong>cold</strong>. Any meaning is fine: weather, illness, a person, a drink. Write in English. Keep to everyday topics, and do not include names or personal details.</p>
+<div class="row">
+  <label for="sentence">Your sentence</label>
+  <input type="text" id="sentence" maxlength="120" autocomplete="off">
+</div>
+<button type="button" id="send">Send to the class map</button>
+<div class="fb hidden" id="sent"></div>
+</section>
+
+<section id="see" class="hidden">
+<h2>2. Find your sentence</h2>
+<p>Each dot is one sentence from the class. The red dot is yours. Which dots are near you? Look at the class screen and guess what they have in common.</p>
+<svg id="map" viewBox="0 0 320 320" role="img" aria-label="Map of the class's sentences" style="width:100%;max-width:420px;background:#ededed"></svg>
+<p class="small" id="count"></p>
+
+<h2>Recap</h2>
+<ul>
+  <li>The model places a sentence by the words around “cold”, not by a definition of the word.</li>
+  <li>Sentences about weather, illness and feelings often form separate groups.</li>
+  <li>The map shows which sentences are similar. It does not say why. For that you have to read them.</li>
+</ul>
+<p class="takeaway">Which sentences ended up in a group you did not expect?</p>
+</section>
+
+<footer class="small">
+  <p>With a room code, your sentence goes to the class screen without your name and is deleted within 12 hours. The language model runs on the course's own service.</p>
+</footer>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/class.js"></script>
+<script>
+(function () {
+  var Q = "m04-sentence", timer = null;
+  function el(id) { return document.getElementById(id); }
+  function note(ok, text) { var f = el("sent"); f.className = "fb " + (ok ? "ok" : "no"); f.textContent = text; }
+  el("send").onclick = function () {
+    var text = el("sentence").value.replace(/\s+/g, " ").trim();
+    if (!Class.room()) { note(false, "This activity needs a room code from your tutor. Type it at the top of the page."); return; }
+    if (text.length < 8) { note(false, "Write a full sentence."); return; }
+    if (!/\bcold/i.test(text)) { note(false, "Use the word “cold” in your sentence."); return; }
+    Class.send(Q, text, "text").then(function (d) {
+      if (!d || !d.ok) { note(false, "Could not send. Check the room code."); return; }
+      note(true, "Sent. You can change your sentence and send it again.");
+      el("see").classList.remove("hidden");
+      draw(); clearInterval(timer); timer = setInterval(draw, 4000);
+    });
+  };
+  function draw() {
+    Class.api("room/" + Class.room() + "/map?q=" + Q + "&device=" + Class.device).then(function (d) {
+      if (!d.ok) return;
+      el("count").textContent = d.n + (d.n === 1 ? " sentence so far" : " sentences so far");
+      el("map").innerHTML = d.points.map(function (p) {
+        return '<circle cx="' + (160 + p.x * 140).toFixed(1) + '" cy="' + (160 - p.y * 140).toFixed(1) + '" r="' + (p.mine ? 8 : 5) + '" fill="' + (p.mine ? "#bf0000" : "#1f4f5e") + '" fill-opacity="' + (p.mine ? 1 : 0.6) + '"/>';
+      }).join("");
+    }).catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>

@@ -85,10 +85,32 @@
   };
 
   function poll() {
-    Class.results(room.code, act.questions.map(function (q) { return q.id; }), room.key).then(function (d) {
+    var plain = act.questions.filter(function (q) { return q.type !== "map"; });
+    if (plain.length) Class.results(room.code, plain.map(function (q) { return q.id; }), room.key).then(function (d) {
       if (!d.ok) return;
-      act.questions.forEach(function (q) { render(q, d.results[q.id] || { n: 0, counts: {}, items: [] }); });
+      plain.forEach(function (q) { render(q, d.results[q.id] || { n: 0, counts: {}, items: [] }); });
     }).catch(function () {});
+    act.questions.filter(function (q) { return q.type === "map"; }).forEach(function (q) {
+      Class.api("room/" + room.code + "/map?q=" + q.id, { headers: { "X-Host-Key": room.key } }).then(function (d) { renderMap(q, d); }).catch(function () {});
+    });
+  }
+
+  var shownDots = {};
+  function renderMap(q, d) {
+    var body = document.querySelector("#r-" + q.id + " .body");
+    if (!d.ok) { body.innerHTML = '<p class="takeaway">' + esc(d.error || "The map is not available.") + "</p>"; return; }
+    var W = 860, H = 520, pad = 40;
+    var dots = d.points.map(function (p, i) {
+      var x = pad + (p.x + 1) / 2 * (W - 2 * pad), y = pad + (1 - (p.y + 1) / 2) * (H - 2 * pad);
+      var on = shownDots[p.text];
+      return '<g class="dot" data-i="' + i + '" style="cursor:pointer"><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="9" fill="' + (on ? "#bf0000" : "#1f4f5e") + '" fill-opacity="' + (on ? 1 : 0.65) + '"/>' +
+        (on ? '<text x="' + (x > W * 0.55 ? x - 13 : x + 13).toFixed(1) + '" y="' + (y + 5).toFixed(1) + '" font-size="15" fill="#333"' + (x > W * 0.55 ? ' text-anchor="end"' : "") + ">" + esc(p.text) + "</text>" : "") + "</g>";
+    }).join("");
+    body.innerHTML = '<p class="small">' + d.n + (d.n === 1 ? " sentence" : " sentences") + ". Click a dot to show or hide its sentence.</p>" +
+      '<svg viewBox="0 0 ' + W + " " + H + '" style="width:100%;background:#ededed" role="img" aria-label="Map of sentences">' + dots + "</svg>";
+    body.querySelectorAll(".dot").forEach(function (g) {
+      g.onclick = function () { var t = d.points[+g.getAttribute("data-i")].text; shownDots[t] = !shownDots[t]; renderMap(q, d); };
+    });
   }
 
   function render(q, res) {
