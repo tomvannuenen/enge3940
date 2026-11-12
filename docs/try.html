@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Try an activity · ENGE3940</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  body { max-width: none; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+  #top { padding: 8px 14px; border-bottom: 1px solid #ccc; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 15px; }
+  #top select, #top input { font-size: 15px; padding: 4px 6px; width: auto; }
+  #top button { margin: 0; }
+  #stage { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  #students { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; min-height: 0; }
+  .frame { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid #ccc; border-bottom: 1px solid #ccc; }
+  .frame span { font-size: 12px; font-weight: 700; color: #1f4f5e; background: #ededed; padding: 2px 8px; }
+  .frame iframe { flex: 1; width: 100%; border: 0; min-height: 0; }
+  #intro { padding: 24px 16px; max-width: 680px; }
+</style>
+</head>
+<body>
+
+<div id="top">
+  <strong>Try an activity</strong>
+  <select id="pick" aria-label="Activity"></select>
+  <span id="pwrow" class="hidden"><input type="password" id="pw" placeholder="Tutor password" autocomplete="off"></span>
+  <button type="button" id="go">Start</button>
+  <button type="button" class="plain hidden" id="pretend">Add 30 pretend students</button>
+  <button type="button" class="plain hidden" id="again">New room</button>
+  <span class="small" id="msg"></span>
+</div>
+
+<div id="intro">
+  <p>This page shows an activity the way a class sees it, on one screen: the tutor’s screen on the left and four students on the right. Each student is a separate laptop.</p>
+  <ol>
+    <li>Choose an activity and press Start.</li>
+    <li>Answer as each student. For pair activities, press “Start a pair” as Student 1 and type the pair number as Student 2.</li>
+    <li>“Add 30 pretend students” fills the tutor’s screen with made-up answers, so you can see it with a full class.</li>
+  </ol>
+  <p class="small">The room and its answers are deleted within 12 hours, or when you close the room on the tutor’s screen.</p>
+</div>
+
+<div id="stage" class="hidden">
+  <div class="frame" style="border-left:0"><span>Tutor’s screen</span><iframe id="tutor" title="Tutor's screen"></iframe></div>
+  <div id="students"></div>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/class.js"></script>
+<script>
+(function () {
+  var ACTS = [["meeting-01", "1 · Read a response closely"], ["meeting-01b", "1 · Fool the class"], ["meeting-02", "2 · Build ELIZA together"],
+    ["meeting-03", "3 · The class is the model"], ["meeting-04", "4 · A map of our sentences"], ["meeting-08", "8 · Agree or rewrite (pairs)"], ["meeting-10", "10 · Tug of war (pairs)"]];
+  var a = (new URLSearchParams(location.search).get("a") || "meeting-01").replace(/[^a-z0-9-]/g, "");
+  var store = window.sessionStorage, act = null, room = null, N = 30;
+  function el(id) { return document.getElementById(id); }
+  function msg(t) { el("msg").textContent = t || ""; }
+
+  el("pick").innerHTML = ACTS.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === a ? " selected" : "") + ">Meeting " + x[1] + "</option>"; }).join("");
+  el("pick").onchange = function () { location.href = "try.html?a=" + el("pick").value; };
+
+  var sc = document.createElement("script");
+  sc.src = "activities/" + a + ".config.js";
+  sc.onload = function () {
+    act = window.ACTIVITY;
+    var saved = null;
+    try { saved = JSON.parse(store.getItem("enge-host-" + act.id)); } catch (e) {}
+    if (saved) Class.api("room/" + saved.code + "/info").then(function (d) { if (d.ok) build(saved); });
+  };
+  sc.onerror = function () { msg("No activity with that name."); };
+  document.body.appendChild(sc);
+  Class.api("needs-password").then(function (d) { if (d.needed) el("pwrow").classList.remove("hidden"); }).catch(function () { msg("The class service cannot be reached."); });
+  el("pw").onkeydown = function (e) { if (e.key === "Enter") el("go").click(); };
+
+  el("go").onclick = function () {
+    if (!act) return;
+    Class.api("room", { method: "POST", headers: { "X-Tutor-Password": el("pw").value } }).then(function (d) {
+      if (!d.code) { msg(d.error || "Could not open a room."); return; }
+      var r = { code: d.code, key: d.key };
+      store.setItem("enge-host-" + act.id, JSON.stringify(r));
+      build(r);
+    }).catch(function () { msg("The class service cannot be reached."); });
+  };
+
+  // The tutor's screen finds the room this page opened; each student frame joins it under its own seat name.
+  function build(r) {
+    room = r; msg("Room " + r.code);
+    el("intro").classList.add("hidden"); el("go").classList.add("hidden"); el("pwrow").classList.add("hidden");
+    el("stage").classList.remove("hidden"); el("pretend").classList.remove("hidden"); el("again").classList.remove("hidden");
+    el("tutor").src = "class.html?a=" + a;
+    var html = "";
+    for (var i = 1; i <= 4; i++) html += '<div class="frame"><span>Student ' + i + '</span><iframe name="seat-' + i + '" title="Student ' + i + '" src="' + act.page + "?room=" + r.code + '"></iframe></div>';
+    el("students").innerHTML = html;
+  }
+
+  el("again").onclick = function () {
+    var done = function () { store.removeItem("enge-host-" + act.id); location.reload(); };
+    Class.api("room/" + room.code + "/close", { method: "POST", headers: { "X-Host-Key": room.key } }).then(done, done);
+  };
+
+  // Pretend students send made-up answers straight to the room. Their answers are replaced, not added, when you press again.
+  el("pretend").onclick = function () {
+    function send(i, q, v, kind) {
+      return Class.api("room/" + room.code + "/answer", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: q, v: v, kind: kind || "choice", device: (i < 16 ? "0" : "") + i.toString(16) + "a5a5a5a5a5a5a5a5a5a5a5" }) }).catch(function () {});
+    }
+    var p = {
+      n: N, send: send,
+      all: function (fn) { for (var i = 0; i < N; i++) fn(i); },
+      state: function (keys) { return Class.api("room/" + room.code + "/state?keys=" + encodeURIComponent(keys.join(","))).then(function (d) { return d.ok ? d.state : null; }); },
+    };
+    if (typeof act.pretend === "function") { act.pretend(p).then(function (t) { msg("Room " + room.code + ". " + t); }); return; }
+    var n = 0;
+    act.questions.forEach(function (q) {
+      var vals = q.pretend || (q.options ? Object.keys(q.options) : q.parts ? Object.keys(q.parts) : null);
+      if (!vals) return;
+      n += 1;
+      if (q.type === "text" || q.type === "map") vals.forEach(function (v, i) { send(i, q.id, v, "text"); }); // each text once
+      else p.all(function (i) { send(i, q.id, vals[Math.floor(Math.random() * vals.length)], q.type === "word" ? "word" : "choice"); });
+    });
+    msg("Room " + room.code + ". Sent pretend answers to " + n + (n === 1 ? " question." : " questions."));
+  };
+})();
+</script>
+</body>
+</html>

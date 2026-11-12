@@ -4,6 +4,16 @@ window.ACTIVITY = {
   title: "The class is the model",
   page: "activities/meeting-03-class-model.html",
   questions: [],
+  // Pretend students for the test page: one word each for the current round.
+  pretend: function (p) {
+    var words = ["the", "the", "the", "food", "food", "people", "people", "very", "my", "and", "so", "really", "always", "noise", "weather", "friends", "a", "a", "not", "that"];
+    return p.state(["m03"]).then(function (s) {
+      var st = s && s.m03;
+      if (!st || !st.round || st.done) return "Start a sentence on the tutor's screen first.";
+      p.all(function (i) { p.send(i, "m03-r" + st.round, words[Math.floor(Math.random() * words.length)], "word"); });
+      return "Sent one word each for word " + st.round + ".";
+    });
+  },
   host: function (h) {
     var state = { round: 0, text: "", done: false }, counts = {}, hidden = [];
     var starts = ["The best thing about this city is", "On the way to class this morning I", "My favourite thing to eat is"];

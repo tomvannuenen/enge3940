@@ -4,6 +4,13 @@ window.ACTIVITY = {
   title: "Build ELIZA together",
   page: "activities/meeting-02-build-eliza.html",
   questions: [],
+  // Pretend students for the test page.
+  pretend: function (p) {
+    var rules = ["exam => What worries you about the exam?", "tired => How long have you felt tired?", "friend => Tell me more about your friend.", "homework => Why do you think homework matters?", "phone => What do you use your phone for?", "happy => What makes you happy?", "because => Is that the real reason?", "sorry => There is no need to apologise.", "dream => What does that dream tell you?", "food => What do you like to eat?", "no => Why not?", "you => We were talking about you, not me."];
+    var breaks = ["I am not sad at all.", "My mother's friend is always tired but I am happy.", "asdfgh", "What is your name?", "I never said always.", "Sadly the shop was closed."];
+    p.all(function (i) { if (i < rules.length) p.send(i, "m02-rule", rules[i], "text"); if (i < breaks.length) p.send(i, "m02-break", breaks[i], "text"); });
+    return Promise.resolve("Sent " + rules.length + " rules and " + breaks.length + " messages that broke the program.");
+  },
   host: function (h) {
     var base = [{ k: "mother", r: "Tell me more about your family." }, { k: "sad", r: "Why do you feel sad?" }, { k: "always", r: "Can you think of a specific example?" }];
     var proposals = [], chosen = {}, live = base.slice(), breaks = [];

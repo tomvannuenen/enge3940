@@ -5,6 +5,20 @@ window.ACTIVITY = {
   title: "Fool the class",
   page: "activities/meeting-01-human-or-chatbot.html",
   questions: [],
+  // Pretend students for the test page: replies first, guesses once the tutor has started the guessing.
+  pretend: function (p) {
+    var person = ["Yeah, it's freezing.", "Do you want my jacket?", "Is it? I feel fine.", "Close the window then.", "I told you to bring a coat.", "The air con is always like this.", "Let's sit somewhere else.", "Haha you are always cold.", "Want some hot tea?", "Ask them to turn it down."];
+    var fake = ["I'm sorry to hear that you're feeling cold. Would you like some tips for staying warm?", "It sounds like the temperature is uncomfortable. You could try adjusting the thermostat.", "I understand. Here are three ways to warm up: wear layers, drink something hot, or move around.", "Brr! Cold rooms can be unpleasant. Is there anything I can help you with?", "That's understandable. Have you considered closing any open windows?", "I can't feel temperature, but I can suggest ways to get warm.", "Feeling cold can be distracting. Would you like me to suggest some solutions?", "Thanks for sharing. A warm drink or an extra layer might help."];
+    return p.state(["m01b"]).then(function (s) {
+      var st = s && s.m01b;
+      if (st && st.phase === "guess") {
+        st.items.forEach(function (it) { p.all(function (i) { p.send(i, "m01b-g-" + it.id, Math.random() < 0.5 ? "person" : "chatbot", "choice"); }); });
+        return "Sent guesses on " + st.items.length + " lines.";
+      }
+      p.all(function (i) { i % 2 ? p.send(i, "m01b-fake", fake[(i >> 1) % fake.length], "text") : p.send(i, "m01b-reply", person[(i >> 1) % person.length], "text"); });
+      return "Sent replies: half as themselves, half like a chatbot.";
+    });
+  },
   host: function (h) {
     var NAMES = { person: "a person, writing as themselves", imitation: "a person, writing like a chatbot", chatbot: "a chatbot" };
     var lists = { person: [], imitation: [] }, chosen = {}, bots = [], items = [], labels = {}, phase = "write", votes = {};

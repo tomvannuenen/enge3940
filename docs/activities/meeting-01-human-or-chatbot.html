@@ -50,7 +50,7 @@
   var fake = Class.group(2) === 1, mine = {}, shown = "", myText = "";
   function el(id) { return document.getElementById(id); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  try { myText = sessionStorage.getItem("m01b-text") || ""; } catch (e) {}
+  myText = Class.store.get("m01b-text") || "";
   el("role").textContent = fake ? "Your job: write like a chatbot." : "Your job: write as yourself.";
   el("rolehelp").textContent = fake
     ? "Write the reply a chatbot would give. Try to make your classmates believe a chatbot wrote it. One or two sentences, in English."
@@ -62,7 +62,7 @@
     Class.send(fake ? "m01b-fake" : "m01b-reply", t, "text").then(function (d) {
       f.className = "fb " + (d && d.ok ? "ok" : "no");
       f.textContent = d && d.ok ? "Sent. You can change it and send it again. Now wait for your tutor." : "Could not send. Check the room code.";
-      if (d && d.ok) { myText = t; try { sessionStorage.setItem("m01b-text", t); } catch (e) {} }
+      if (d && d.ok) { myText = t; Class.store.set("m01b-text", t); }
     });
   };
   function draw(st) {

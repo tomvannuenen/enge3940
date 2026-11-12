@@ -3,8 +3,10 @@
 (function () {
   var API = (window.ENGE_API || "").replace(/\/$/, "");
   var store = window.sessionStorage;
-  function get(k) { try { return store.getItem(k); } catch (e) { return null; } }
-  function set(k, v) { try { v === null ? store.removeItem(k) : store.setItem(k, v); } catch (e) {} }
+  // On the test page (try.html) each student frame has a name like "seat-2" and keeps its own identity.
+  var seat = /^seat-[0-9]+$/.test(window.name || "") ? window.name + "-" : "";
+  function get(k) { try { return store.getItem(seat + k); } catch (e) { return null; } }
+  function set(k, v) { try { v === null ? store.removeItem(seat + k) : store.setItem(seat + k, v); } catch (e) {} }
 
   var device = get("enge-device");
   if (!device) {
@@ -24,7 +26,8 @@
     room: function () { return room; },
     device: device,
     // Which of n groups this device is in. Used when the class is split.
-    group: function (n) { return parseInt(device.slice(0, 6), 16) % n; },
+    group: function (n) { return seat ? (parseInt(seat.slice(5), 10) - 1) % n : parseInt(device.slice(0, 6), 16) % n; },
+    store: { get: get, set: set },
     send: function (q, v, kind) {
       if (!room) return Promise.resolve(null);
       return api("room/" + room + "/answer", {
