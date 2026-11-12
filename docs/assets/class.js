@@ -72,6 +72,13 @@
     pairView: function () {
       return api("room/" + room + "/pairview?pair=" + Class.pair.id + "&device=" + device).then(function (d) { if (d.ok) Class.pair.size = d.size; return d; }).catch(function () { return { error: "offline" }; });
     },
+    // Leave the pair, so the others do not wait for this laptop.
+    pairLeave: function () {
+      var id = Class.pair.id;
+      set("enge-pair", null); set("enge-role", null); Class.pair = { id: null, role: 0, size: 1 };
+      if (!room || !id) return Promise.resolve(null);
+      return api("room/" + room + "/pairleave", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pair: id, device: device }) }).catch(function () { return null; });
+    },
     api: api,
   };
   window.Class = Class;
@@ -82,7 +89,7 @@
   function draw(msg) {
     if (room) {
       bar.innerHTML = '<strong>Room ' + room + '.</strong> Your answers go to the class screen without your name. <button type="button" class="plain" id="leave">Leave</button>';
-      document.getElementById("leave").onclick = function () { room = null; set("enge-room", null); set("enge-pair", null); set("enge-role", null); Class.pair = { id: null, role: 0, size: 1 }; draw(); };
+      document.getElementById("leave").onclick = function () { Class.pairLeave().then(function () { room = null; set("enge-room", null); draw(); }); };
     } else {
       bar.innerHTML = '<label for="code">In class? Type the room code:</label> <input type="text" id="code" maxlength="4" size="5" autocomplete="off" autocapitalize="characters"> <button type="button" id="join">Join</button> <span class="small">' + (msg || "Working alone, nothing you type leaves your browser.") + '</span>';
       document.getElementById("join").onclick = join;

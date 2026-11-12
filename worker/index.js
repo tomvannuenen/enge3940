@@ -125,7 +125,7 @@ export default {
     if (url.pathname === "/api/needs-password") return json({ needed: !!env.TUTOR_PASSWORD });
 
     // /api/room/CODE/...
-    const m = url.pathname.match(/^\/api\/room\/([A-Za-z]{4})\/(info|answer|results|moderate|close|map|generate|publish|state|pair|pairput|pairview)$/);
+    const m = url.pathname.match(/^\/api\/room\/([A-Za-z]{4})\/(info|answer|results|moderate|close|map|generate|publish|state|pair|pairput|pairview|pairleave)$/);
     if (!m) return json({ error: "Not found" }, 404);
     const stub = env.ROOMS.get(env.ROOMS.idFromName(m[1].toUpperCase()));
     return stub.fetch("https://room/" + m[2] + url.search, {
@@ -325,11 +325,28 @@ export class Room {
       if (!pr) return json({ error: "No pair with that number." }, 404);
       let role = pr.members.indexOf(device);
       if (role === -1) {
-        if (pr.members.length >= 3) return json({ error: "That pair is full." }, 409);
-        pr.members.push(device); role = pr.members.length - 1;
+        if (pr.members.filter(Boolean).length >= 3) return json({ error: "That pair is full." }, 409);
+        role = pr.members.indexOf(null); // the place of someone who left, if there is one
+        if (role === -1) { pr.members.push(device); role = pr.members.length - 1; } else pr.members[role] = device;
         await this.storage.put("pair:" + id, pr);
       }
-      return json({ ok: true, pair: id, role, size: pr.members.length });
+      return json({ ok: true, pair: id, role, size: pr.members.filter(Boolean).length });
+    }
+
+    // POST pairleave {pair, device} : a member leaves. Their answers go with them,
+    // so the others are not left waiting for someone who is no longer there.
+    if (action === "pairleave" && request.method === "POST") {
+      let b;
+      try { b = JSON.parse(await request.text()); } catch (e) { return json({ error: "Bad request" }, 400); }
+      const id = parseInt(b.pair, 10);
+      const pr = await this.storage.get("pair:" + id);
+      const role = pr ? pr.members.indexOf(String(b.device || "x")) : -1;
+      if (role !== -1) {
+        pr.members[role] = null;
+        for (const rec of Object.values(pr.data)) delete rec.values[role];
+        await this.storage.put("pair:" + id, pr);
+      }
+      return json({ ok: true });
     }
 
     // POST pairput {pair, device, key, value, secret} : one member records something.
@@ -338,7 +355,7 @@ export class Room {
       let b;
       try { b = JSON.parse(await request.text()); } catch (e) { return json({ error: "Bad request" }, 400); }
       const pr = await this.storage.get("pair:" + parseInt(b.pair, 10));
-      const role = pr ? pr.members.indexOf(String(b.device || "")) : -1;
+      const role = pr ? pr.members.indexOf(String(b.device || "x")) : -1;
       if (role === -1) return json({ error: "You are not in that pair." }, 403);
       // One value, or several at once in "items".
       const items = Array.isArray(b.items) ? b.items.slice(0, 20) : [{ key: b.key, value: b.value, secret: b.secret }];
@@ -356,9 +373,9 @@ export class Room {
     // GET pairview?pair=..&device=.. : what a member may see of the pair's work.
     if (action === "pairview") {
       const pr = await this.storage.get("pair:" + parseInt(url.searchParams.get("pair"), 10));
-      const role = pr ? pr.members.indexOf(url.searchParams.get("device") || "") : -1;
+      const role = pr ? pr.members.indexOf(url.searchParams.get("device") || "x") : -1;
       if (role === -1) return json({ error: "You are not in that pair." }, 403);
-      const size = pr.members.length, keys = {};
+      const size = pr.members.filter(Boolean).length, keys = {};
       for (const [k, rec] of Object.entries(pr.data)) {
         const vals = rec.values, answered = Object.keys(vals).length;
         if (rec.secret) {

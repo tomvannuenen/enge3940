@@ -5,11 +5,8 @@ window.PairBox = function (box, onReady) {
   function draw(msg) {
     if (!Class.room()) { box.innerHTML = '<p class="small">Type the room code at the top of the page first.</p>'; return; }
     if (Class.pair.id) {
-      box.innerHTML = "<p><strong>Pair " + Class.pair.id + ".</strong> You are person " + "ABC".charAt(Class.pair.role) + '. <span id="pairsize" class="small"></span> <button type="button" class="plain" id="pleave">Change pair</button></p>';
-      document.getElementById("pleave").onclick = function () {
-        try { sessionStorage.removeItem("enge-pair"); sessionStorage.removeItem("enge-role"); } catch (e) {}
-        location.reload();
-      };
+      box.innerHTML = "<p><strong>Pair " + Class.pair.id + ".</strong> You are person " + "ABC".charAt(Class.pair.role) + '. <span id="pairsize" class="small"></span> <button type="button" class="plain" id="pleave">Change pair</button></p><p class="small">Stuck waiting for someone who has gone? Both press Change pair and make a new pair.</p>';
+      document.getElementById("pleave").onclick = function () { Class.pairLeave().then(function () { location.reload(); }); };
       if (!ready) { ready = true; onReady(); }
       return;
     }
