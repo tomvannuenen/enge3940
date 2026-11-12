@@ -15,6 +15,7 @@
 <div id="start">
   <p>Open a room for this activity. Students type the room code on the activity page, and their answers appear here without names.</p>
   <p>Answers are deleted when you close the room, or after 12 hours.</p>
+  <p id="pwrow" class="hidden"><label for="pw">Tutor password</label><br><input type="password" id="pw" autocomplete="current-password" style="max-width: 16em"></p>
   <button type="button" id="open">Open a room</button>
   <p id="msg" class="takeaway"></p>
 </div>
@@ -50,11 +51,13 @@
     if (saved) Class.api("room/" + saved.code + "/info").then(function (d) { if (d.ok) start(saved); });
   };
   sc.onerror = function () { el("msg").textContent = "No activity with that name."; };
+  if (window.ENGE_CLASS_AVAILABLE) Class.api("needs-password").then(function (d) { if (d.needed) el("pwrow").classList.remove("hidden"); }).catch(function () {});
+  el("pw").onkeydown = function (e) { if (e.key === "Enter") el("open").click(); };
   document.body.appendChild(sc);
 
   el("open").onclick = function () {
     if (!window.ENGE_CLASS_AVAILABLE) { el("msg").textContent = "The class service is not set up on this copy of the site."; return; }
-    Class.api("room", { method: "POST" }).then(function (d) {
+    Class.api("room", { method: "POST", headers: { "X-Tutor-Password": el("pw").value } }).then(function (d) {
       if (!d.code) { el("msg").textContent = d.error || "Could not open a room."; return; }
       var r = { code: d.code, key: d.key };
       store.setItem("enge-host-" + act.id, JSON.stringify(r));

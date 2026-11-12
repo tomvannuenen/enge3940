@@ -11,7 +11,7 @@ const LETTERS = "BCDFGHJKLMNPQRSTVWXZ"; // consonants only, so a code never spel
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, X-Host-Key",
+  "Access-Control-Allow-Headers": "Content-Type, X-Host-Key, X-Tutor-Password",
   "Access-Control-Max-Age": "86400",
 };
 function json(data, status) {
@@ -37,8 +37,11 @@ export default {
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
-    // POST /api/room : open a new room
+    // POST /api/room : open a new room. If the TUTOR_PASSWORD secret is set, only tutors can do this.
     if (url.pathname === "/api/room" && request.method === "POST") {
+      if (env.TUTOR_PASSWORD && request.headers.get("X-Tutor-Password") !== env.TUTOR_PASSWORD) {
+        return json({ error: "Wrong tutor password." }, 401);
+      }
       for (let i = 0; i < 6; i++) {
         const code = randomCode();
         const key = randomKey();
@@ -50,6 +53,9 @@ export default {
     }
 
     // /api/room/CODE/...
+    // GET /api/needs-password : does opening a room need the tutor password?
+    if (url.pathname === "/api/needs-password") return json({ needed: !!env.TUTOR_PASSWORD });
+
     const m = url.pathname.match(/^\/api\/room\/([A-Za-z]{4})\/(info|answer|results|moderate|close)$/);
     if (!m) return json({ error: "Not found" }, 404);
     const stub = env.ROOMS.get(env.ROOMS.idFromName(m[1].toUpperCase()));
