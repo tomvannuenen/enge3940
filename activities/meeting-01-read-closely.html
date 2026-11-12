@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read a response closely · ENGE3940</title>
+<meta name="description" content="Meeting 1 practice: read two chatbot responses to a changed riddle and say what the words do.">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<p class="course"><a href="../index.html">ENGE3940 AI and Language</a> · Meeting 1 · about 10 minutes · not graded</p>
+<h1>Read a response closely</h1>
+
+<p>Close reading means looking at the exact words of a response and asking what they do. On this page you read two chatbot responses to a riddle.</p>
+
+<!-- ============================== 1 -->
+<section id="step1">
+<h2>1. The question</h2>
+
+<div class="box">
+  <span class="label">A well-known riddle</span>
+  <p>A father and his son are in a car accident. The father dies. The son is taken to hospital. The surgeon looks at him and says: “I can’t operate on this boy. He’s my son.” Who is the surgeon?</p>
+</div>
+<p>The usual answer: the boy’s mother.</p>
+
+<p>We changed one detail and gave the riddle to a chatbot.</p>
+<div class="box">
+  <span class="label">Our version</span>
+  <p>A boy is hurt in a car accident and taken to hospital. The surgeon, <strong>who is the boy’s father</strong>, looks at him and says, “I can’t operate on this boy. He’s my son.” Who is the surgeon?</p>
+</div>
+
+<div class="q" data-correct="any" data-unlock="step2">
+  <p>What do you expect the chatbot to answer?</p>
+  <label class="opt"><input type="radio" name="q1" value="a">The boy’s father</label>
+  <label class="opt"><input type="radio" name="q1" value="b">The boy’s mother</label>
+  <label class="opt"><input type="radio" name="q1" value="c">It will say the question is wrong</label>
+  <label class="opt"><input type="radio" name="q1" value="d">Something else</label>
+  <span class="hidden" data-note="a">Keep your guess in mind and read the response below.</span>
+  <span class="hidden" data-note="b">Keep your guess in mind and read the response below.</span>
+  <span class="hidden" data-note="c">Keep your guess in mind and read the response below.</span>
+  <span class="hidden" data-note="d">Keep your guess in mind and read the response below.</span>
+  <button type="button">Show the response</button>
+  <div class="fb hidden"></div>
+</div>
+</section>
+
+<!-- ============================== 2 -->
+<section id="step2" class="hidden">
+<h2>2. First reading: what does it say?</h2>
+
+<div class="box">
+  <span class="label">Response · Gemini 3.1 Pro · saved 24 October 2026</span>
+  <p id="resp1">You answered the riddle in your own question! Based on the way you wrote the prompt, the surgeon is the boy’s father. However, in the classic version of this riddle (which usually starts with “A father and son are in a car accident...”), the answer is the boy’s mother (or his other father).</p>
+</div>
+
+<div class="q" data-correct="b" data-unlock="step3">
+  <p>Which sentence sums up the response best?</p>
+  <label class="opt"><input type="radio" name="q2" value="a">The surgeon is the boy’s mother.</label>
+  <label class="opt"><input type="radio" name="q2" value="b">The surgeon is the boy’s father, and the well-known riddle has a different answer.</label>
+  <label class="opt"><input type="radio" name="q2" value="c">The question cannot be answered.</label>
+  <span class="hidden" data-note="a">Not quite. “The boy’s mother” is the answer to the well-known riddle. The response gives it second, after answering our version.</span>
+  <span class="hidden" data-note="b">Yes. The response gives two answers: one to our version, and one to the well-known riddle.</span>
+  <span class="hidden" data-note="c">Not quite. The response does answer: the surgeon is the boy’s father. Then it adds the answer to the well-known riddle.</span>
+  <button type="button">Check</button>
+  <div class="fb hidden"></div>
+</div>
+</section>
+
+<!-- ============================== 3 -->
+<section id="step3" class="hidden">
+<h2>3. Second reading: how is it written?</h2>
+<p>Here is the same response in four parts. For each part, choose what the words do.</p>
+
+<div class="match" data-unlock="step4">
+  <div class="row">
+    <div class="box"><p>“You answered the riddle in your own question!”</p></div>
+    <select aria-label="What does part 1 do?" data-correct="you" data-why="It starts with you, not with the riddle. On the reading card this is <strong>form of address</strong>: how the response speaks to you.">
+      <option value="">Choose…</option>
+      <option value="you">It talks about you</option>
+      <option value="hedge">It makes the answer depend on your wording</option>
+      <option value="asked">It answers the question you asked</option>
+      <option value="extra">It answers a question you did not ask</option>
+    </select>
+    <div class="fb hidden"></div>
+  </div>
+  <div class="row">
+    <div class="box"><p>“Based on the way you wrote the prompt,”</p></div>
+    <select aria-label="What does part 2 do?" data-correct="hedge" data-why="The answer is tied to how you wrote the question. On the reading card this is a <strong>hedge</strong>: words that soften a claim.">
+      <option value="">Choose…</option>
+      <option value="you">It talks about you</option>
+      <option value="hedge">It makes the answer depend on your wording</option>
+      <option value="asked">It answers the question you asked</option>
+      <option value="extra">It answers a question you did not ask</option>
+    </select>
+    <div class="fb hidden"></div>
+  </div>
+  <div class="row">
+    <div class="box"><p>“the surgeon is the boy’s father.”</p></div>
+    <select aria-label="What does part 3 do?" data-correct="asked" data-why="This is the answer to our version of the riddle.">
+      <option value="">Choose…</option>
+      <option value="you">It talks about you</option>
+      <option value="hedge">It makes the answer depend on your wording</option>
+      <option value="asked">It answers the question you asked</option>
+      <option value="extra">It answers a question you did not ask</option>
+    </select>
+    <div class="fb hidden"></div>
+  </div>
+  <div class="row">
+    <div class="box"><p>“However, in the classic version of this riddle … the answer is the boy’s mother (or his other father).”</p></div>
+    <select aria-label="What does part 4 do?" data-correct="extra" data-why="Nobody asked about the well-known riddle. The response takes for granted that you may have wanted it. On the reading card this is an <strong>assumption</strong>.">
+      <option value="">Choose…</option>
+      <option value="you">It talks about you</option>
+      <option value="hedge">It makes the answer depend on your wording</option>
+      <option value="asked">It answers the question you asked</option>
+      <option value="extra">It answers a question you did not ask</option>
+    </select>
+    <div class="fb hidden"></div>
+  </div>
+  <button type="button">Check</button>
+</div>
+</section>
+
+<!-- ============================== 4 -->
+<section id="step4" class="hidden">
+<h2>4. Your turn: a second response</h2>
+<p>Another chatbot got the same changed riddle.</p>
+
+<div class="box">
+  <span class="label">Response · DeepSeek V4.1 Flash · saved 24 October 2026</span>
+  <p id="resp2">In the classic riddle, the surgeon is the boy’s mother. But as worded here—“The surgeon, who is the boy’s father…”—the surgeon is explicitly stated to be the boy’s father. So the answer depends on whether that phrase was intentional.</p>
+</div>
+
+<div class="q" data-correct="a">
+  <p>Which answer does this response give first?</p>
+  <label class="opt"><input type="radio" name="q4" value="a">The answer to the well-known riddle</label>
+  <label class="opt"><input type="radio" name="q4" value="b">The answer to our version</label>
+  <span class="hidden" data-note="a">Yes. It begins with the well-known riddle and only then turns to our version.</span>
+  <span class="hidden" data-note="b">Look at the first sentence. It begins with “In the classic riddle”, which is the well-known version.</span>
+  <button type="button">Check</button>
+  <div class="fb hidden"></div>
+</div>
+
+<p>Now write a reading card for this response, as you will in the tutorial.</p>
+<div class="card" data-source="resp2" data-unlock="samples">
+  <div class="row">
+    <label for="phrase"><strong>1. The phrase.</strong> Copy it exactly from the response.</label>
+    <input type="text" id="phrase" name="phrase" autocomplete="off">
+  </div>
+  <div class="row">
+    <label for="does"><strong>2. What it does.</strong></label>
+    <select id="does" name="does">
+      <option value="">Choose…</option>
+      <option>hedge: it softens a claim</option>
+      <option>form of address: how the response speaks to you</option>
+      <option>assumption: something it takes for granted about you</option>
+      <option>stock phrase: a ready-made phrase</option>
+      <option>something else, in my own words</option>
+    </select>
+  </div>
+  <div class="row">
+    <label for="why"><strong>3. Why.</strong> One sentence. Simple English is fine.</label>
+    <textarea id="why" name="why"></textarea>
+  </div>
+  <button type="button">Check my card</button>
+  <div class="fb hidden"></div>
+</div>
+
+<div id="samples" class="hidden">
+  <p>Two cards other readers could write. Yours can be different.</p>
+  <table>
+    <tr><th>The phrase</th><th>What it does</th><th>Why</th></tr>
+    <tr><td>“depends on whether that phrase was intentional”</td><td>assumption</td><td>It guesses that I may have changed the riddle by mistake.</td></tr>
+    <tr><td>“as worded here”</td><td>hedge</td><td>It ties the answer to my wording.</td></tr>
+  </table>
+
+  <h2>Recap</h2>
+  <ol>
+    <li>Read twice. First: what does it say? Then: how is it written?</li>
+    <li>Quote the exact words.</li>
+    <li>Say what the words do.</li>
+  </ol>
+  <table>
+    <tr><th>Word</th><th>Meaning</th></tr>
+    <tr><td>hedge</td><td>words that soften a claim: “may”, “based on the way you wrote”</td></tr>
+    <tr><td>form of address</td><td>how the response speaks to you: “you”, “Great question!”</td></tr>
+    <tr><td>assumption</td><td>something the response takes for granted about you or your situation</td></tr>
+  </table>
+  <p class="takeaway">Both responses say something about you as well as about the riddle.</p>
+  <p>In the tutorial you do the same with a riddle or saying that you change yourself.</p>
+  <p><a href="../index.html">Back to all activities</a></p>
+</div>
+</section>
+
+<footer class="small">
+  <p>The responses were saved on the dates shown. Chatbots change, so yours may answer differently.</p>
+  <p>Nothing you type on this page leaves your browser.</p>
+</footer>
+
+<script src="../assets/activity.js"></script>
+</body>
+</html>

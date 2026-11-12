@@ -1,0 +1,48 @@
+/* ENGE3940 activities. One column, system fonts, no libraries. */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0 auto; padding: 24px 16px 72px; max-width: 680px;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-size: 17px; line-height: 1.55; color: #333; background: #fff;
+}
+a { color: #1f4f5e; }
+h1 { font-size: 28px; font-weight: 400; line-height: 1.2; margin: 6px 0 12px; }
+h2 { font-size: 20px; font-weight: 400; margin: 36px 0 8px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+.course { color: #6b6b6b; font-size: 15px; margin: 0; }
+.small { color: #6b6b6b; font-size: 14px; }
+.takeaway { color: #bf0000; }
+.box { background: #ededed; padding: 12px 14px; margin: 0 0 12px; }
+.box .label { display: block; font-size: 13px; font-weight: 700; color: #1f4f5e; margin-bottom: 4px; }
+.box p:last-child { margin-bottom: 0; }
+.hidden { display: none; }
+
+/* questions */
+.q { margin: 0 0 12px; }
+.q label.opt { display: block; padding: 8px 10px; margin: 0 0 6px; border: 1px solid #bfbfbf; cursor: pointer; }
+.q label.opt:hover { background: #f6f6f6; }
+.q input[type="radio"] { margin-right: 8px; }
+button {
+  font: inherit; padding: 8px 16px; border: 1px solid #1f4f5e; background: #1f4f5e; color: #fff; cursor: pointer;
+}
+button:hover { background: #173c48; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #bf0000; outline-offset: 2px; }
+select, input[type="text"], textarea {
+  font: inherit; width: 100%; padding: 8px; border: 1px solid #bfbfbf; background: #fff; color: #333;
+}
+textarea { min-height: 64px; }
+.fb { padding: 10px 12px; margin: 10px 0 0; }
+.fb.ok { background: #dce9e8; }
+.fb.no { background: #f7dddd; }
+.row { margin: 0 0 16px; }
+.row .fb { margin-top: 6px; }
+table { border-collapse: collapse; width: 100%; margin: 0 0 12px; }
+td, th { border: 1px solid #bfbfbf; padding: 8px 10px; text-align: left; vertical-align: top; }
+th { color: #1f4f5e; }
+.list { list-style: none; padding: 0; }
+.list li { border-top: 1px solid #bfbfbf; padding: 12px 0; margin: 0; }
+.list li:last-child { border-bottom: 1px solid #bfbfbf; }
+footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid #bfbfbf; }
